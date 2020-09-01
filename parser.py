@@ -29,8 +29,10 @@ def GetBookFirstChapter(url: str, session: Session):
 with Session() as session:
     with open("./PrivateConfig/mainPassword.txt") as f:
         password = f.readlines()[0]
+    with open("./PrivateConfig/mail.ru-email.txt") as f:
+        email = f.readlines()[0]
     data = {
-        "Login": "<email>",
+        "Login": email,
         "Password": password
     }
 
@@ -45,7 +47,8 @@ with Session() as session:
     with session.get(Pages.purchased) as purchasedResponse:
         DOM: BeautifulSoup = BeautifulSoup(purchasedResponse.text,
                                            "html.parser")
-        for book in DOM.find_all("div", attrs={"class": "bookcard"}):
+        bookShelf = DOM.select_one("div.book-shelf")
+        for book in bookShelf.find_all("div", attrs={"class": "bookcard"}):
             author = book.find(
                 "h5", attrs={"class": "bookcard-authors"}).a.text
             title = book.find(
