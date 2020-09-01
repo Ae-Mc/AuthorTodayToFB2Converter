@@ -1,6 +1,6 @@
 import re
-from dataclasses import dataclass
-from os import mkdir, path
+from Classes.Dataclasses import Pages, User, Chapter
+from os import mkdir
 from json import loads
 from typing import List
 
@@ -12,31 +12,6 @@ try:
     mkdir(OutputFolder)
 except FileExistsError:
     pass
-
-USERNAME = "<username>"
-
-
-@dataclass
-class Pages:
-    main = "https://author.today"
-    login = f"{main}/account/login"
-    personalAccount = f"{main}/account/my-page"
-    profile = f"{main}/u/{USERNAME}"
-    purchased = f"{main}/u/{USERNAME}/library/purchased"
-
-
-@dataclass
-class User:
-    username: str = ""
-    email: str = ""
-    userId: int = 0
-
-
-@dataclass
-class Chapter:
-    title: str
-    chapterId: int
-    length: int
 
 
 def GetBookChapters(url: str, session: Session) -> List[Chapter]:
