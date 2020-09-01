@@ -93,12 +93,10 @@ with Session() as session:
                                                "html.parser")
             bookShelf = DOM.select_one("div.book-shelf")
             for book in bookShelf.find_all("div", attrs={"class": "bookcard"}):
-                author = book.find(
-                    "h5", attrs={"class": "bookcard-authors"}).a.text
-                title = book.find(
-                    "h4", attrs={"class": "bookcard-title"}).a.text
-                url = Pages.main + book.find("div", attrs={
-                    "class": "thumb-buttons"}).find_all("a")[1]["href"]
+                author = book.select_one(".bookcard-authors > a").text
+                title = book.select_one(".bookcard-title > a").text
+                url = Pages.main + book.select(
+                    ".thumb-buttons > a")[1]["href"]
                 print(f"\n{author}. «{title}» ({url})")
                 chapters = GetBookChapters(url, session)
                 print(*chapters, sep="\n")
