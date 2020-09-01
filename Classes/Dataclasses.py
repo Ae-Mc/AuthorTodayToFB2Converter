@@ -38,3 +38,9 @@ class BookHeader:
 
     def GetReaderUrl(self) -> str:
         return Pages.baseReaderUrl + '/' + str(self.bookId)
+
+
+@dataclass
+class Chapter:
+    header: ChapterHeader
+    paragraphs: List[str]

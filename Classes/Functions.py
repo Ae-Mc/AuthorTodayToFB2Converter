@@ -5,7 +5,7 @@ from typing import List
 from bs4 import BeautifulSoup
 from requests import Response, Session
 
-from Classes.Dataclasses import ChapterHeader, Pages, User, BookHeader
+from Classes.Dataclasses import ChapterHeader, Pages, User, BookHeader, Chapter
 
 
 def GetBookTableOfContents(session: Session, url: str) -> List[ChapterHeader]:
@@ -94,3 +94,15 @@ def GetUsersBooks(session: Session, url: str) -> List[BookHeader]:
                 books.append(
                     BookHeader(title, author, tableOfContents, bookId))
     return books
+
+
+def GetChapter(session: Session,
+               book: BookHeader,
+               chapterNumber: int) -> Chapter:
+    with session.get(book.GetReaderUrl() +
+                     "/chapter?id=" +
+                     str(book.tableOfContents[chapterNumber].chapterId)
+                     ) as chapterResponse:
+        print(chapterResponse.text)
+        readerSecret = chapterResponse.headers["Reader-Secret"]
+        print(readerSecret)
