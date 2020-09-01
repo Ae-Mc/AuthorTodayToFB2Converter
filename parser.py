@@ -1,6 +1,8 @@
 import re
 from dataclasses import dataclass
 from os import mkdir, path
+from json import loads
+from typing import List
 
 from bs4 import BeautifulSoup
 from requests import Response, Session
@@ -30,9 +32,32 @@ class User:
     userId: int = 0
 
 
-def GetBookFirstChapter(url: str, session: Session):
-    with session.get(url) as reader:
-        print(reader.url)
+@dataclass
+class Chapter:
+    title: str
+    chapterId: int
+    length: int
+
+
+def GetBookChapters(url: str, session: Session) -> List[Chapter]:
+    with session.get(url) as readerResponse:
+        responseText = readerResponse.text
+        searchResult = re.search(
+            r"app.init\(\"readerIndex\", \{.*chapters: "
+            r"(\[.*\])"
+            r",[ \n\r]*chapterProgress",
+            responseText,
+            re.DOTALL)
+        chapters: List[Chapter] = []
+        if searchResult is not None and readerResponse.status_code == 200:
+            rawChapters = loads(searchResult.group(1))
+            for rawChapter in rawChapters:
+                chapters.append(Chapter(rawChapter["title"],
+                                        rawChapter["id"],
+                                        rawChapter["textLength"]))
+        else:
+            print("Error! Can't get chapters from url {url}!")
+        return chapters
 
 
 def GetRequestVerificationToken(response: Response) -> str:
@@ -86,8 +111,8 @@ def Authorize(session: Session) -> bool:
 with Session() as session:
     if Authorize(session):
         user = GetUser(session)
-        print(f"Successful log in as {user.username} aka {user.email} "
-              f"(id: {user.userId})!\n")
+        print(f"\n[LOG] Successful log in as {user.username} aka {user.email} "
+              f"(id: {user.userId})!")
         with session.get(Pages.purchased) as purchasedResponse:
             DOM: BeautifulSoup = BeautifulSoup(purchasedResponse.text,
                                                "html.parser")
@@ -99,10 +124,6 @@ with Session() as session:
                     "h4", attrs={"class": "bookcard-title"}).a.text
                 url = Pages.main + book.find("div", attrs={
                     "class": "thumb-buttons"}).find_all("a")[1]["href"]
-                print(f"{author}. «{title}» ({url})")
-                GetBookFirstChapter(url, session)
-
-            with open(path.join(OutputFolder,
-                                "purchased.php"),
-                      "w") as purchasedFile:
-                purchasedFile.write(purchasedResponse.text)
+                print(f"\n{author}. «{title}» ({url})")
+                chapters = GetBookChapters(url, session)
+                print(*chapters, sep="\n")
