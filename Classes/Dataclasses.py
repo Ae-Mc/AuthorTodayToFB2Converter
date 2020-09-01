@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 
 USERNAME = "<username>"
@@ -11,6 +12,7 @@ class Pages:
     personalAccount = f"{main}/account/my-page"
     profile = f"{main}/u/{USERNAME}"
     purchased = f"{main}/u/{USERNAME}/library/purchased"
+    baseReaderUrl = f"{main}/reader"
 
 
 @dataclass
@@ -21,7 +23,18 @@ class User:
 
 
 @dataclass
-class Chapter:
+class ChapterHeader:
     title: str
     chapterId: int
     length: int
+
+
+@dataclass
+class BookHeader:
+    title: str
+    author: str
+    tableOfContents: List[ChapterHeader]
+    bookId: int
+
+    def GetReaderUrl(self) -> str:
+        return Pages.baseReaderUrl + '/' + str(self.bookId)
