@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from os import mkdir, path
 
@@ -22,6 +23,13 @@ class Pages:
     purchased = f"{main}/u/{USERNAME}/library/purchased"
 
 
+@dataclass
+class User:
+    username: str = ""
+    email: str = ""
+    userId: int = 0
+
+
 def GetBookFirstChapter(url: str, session: Session):
     with session.get(url) as reader:
         print(reader.url)
@@ -30,6 +38,29 @@ def GetBookFirstChapter(url: str, session: Session):
 def GetRequestVerificationToken(response: Response) -> str:
     DOM: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
     return DOM.select_one("form#logoffForm > input").attrs["value"]
+
+
+def SearchGroupOne(pattern: str, text: str) -> str:
+    expr = re.compile(pattern)
+    searchResult = expr.search(text)
+    if searchResult is not None:
+        return searchResult.group(1)
+    else:
+        return ""
+
+
+def GetUser(session: Session) -> User:
+    with session.get(Pages.personalAccount) as personalAccountResponse:
+        responseText = personalAccountResponse.text
+        user = User()
+        user.username = SearchGroupOne(
+            r"ChatraIntegration.name = ['\"](.*)['\"]", responseText)
+        user.email = SearchGroupOne(
+            r"ChatraIntegration.email = ['\"](.*)['\"]", responseText)
+        searchResult = SearchGroupOne(
+            r"ga\('set', 'userId', '(\d*)'\)", responseText)
+        user.userId = 0 if len(searchResult) == 0 else int(searchResult)
+        return user
 
 
 def Authorize(session: Session) -> bool:
@@ -54,6 +85,9 @@ def Authorize(session: Session) -> bool:
 
 with Session() as session:
     if Authorize(session):
+        user = GetUser(session)
+        print(f"Successful log in as {user.username} aka {user.email} "
+              f"(id: {user.userId})!\n")
         with session.get(Pages.purchased) as purchasedResponse:
             DOM: BeautifulSoup = BeautifulSoup(purchasedResponse.text,
                                                "html.parser")
