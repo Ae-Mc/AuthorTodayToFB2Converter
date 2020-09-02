@@ -5,7 +5,7 @@ from typing import List
 from bs4 import BeautifulSoup
 from requests import Response, Session
 
-from Classes.Dataclasses import ChapterHeader, Pages, User, BookHeader, Chapter
+from Classes.Dataclasses import BookHeader, Chapter, ChapterHeader, Pages, User
 
 
 def GetBookTableOfContents(session: Session, url: str) -> List[ChapterHeader]:
@@ -53,7 +53,7 @@ def GetUser(session: Session) -> User:
             r"ChatraIntegration.email = ['\"](.*)['\"]", responseText)
         searchResult = SearchGroupOne(
             r"ga\('set', 'userId', '(\d*)'\)", responseText)
-        user.userId = 0 if len(searchResult) == 0 else int(searchResult)
+        user.userId = -1 if len(searchResult) == 0 else int(searchResult)
         return user
 
 
@@ -96,13 +96,49 @@ def GetUsersBooks(session: Session, url: str) -> List[BookHeader]:
     return books
 
 
+def DecodeChapter(chapterRawTextData: str,
+                  user: User,
+                  readerSecret: str) -> str:
+    cipher = "".join(reversed(readerSecret)) + "@_@"
+    if user.userId != -1:
+        cipher += str(user.userId)
+    chapterText = ""
+    for i in range(0, len(chapterRawTextData)):
+        chapterText += chr(
+            ord(chapterRawTextData[i]) ^ ord(cipher[i % len(cipher)]))
+    return chapterText
+
+
 def GetChapter(session: Session,
+               user: User,
                book: BookHeader,
                chapterNumber: int) -> Chapter:
+    chapter = Chapter(book.tableOfContents[chapterNumber], [])
     with session.get(book.GetReaderUrl() +
                      "/chapter?id=" +
                      str(book.tableOfContents[chapterNumber].chapterId)
                      ) as chapterResponse:
-        print(chapterResponse.text)
-        readerSecret = chapterResponse.headers["Reader-Secret"]
-        print(readerSecret)
+        data = loads(chapterResponse.text)
+        if chapterResponse.status_code == 200 and data["isSuccessful"] is True:
+            text = data["data"]["text"]
+            readerSecret = chapterResponse.headers["Reader-Secret"]
+            chapterText = DecodeChapter(text, user, readerSecret)
+            DOM: BeautifulSoup = BeautifulSoup(chapterText, "html.parser")
+            for paragraph in DOM.find_all("p"):
+                chapter.paragraphs.append(paragraph.text)
+        else:
+            print("Error! Can't get chapter"
+                  f" «{book.tableOfContents[chapterNumber].title}»"
+                  f" from book «{book.title}».")
+            if "messages" in data and len(data["messages"]) > 0:
+                if data["messages"][0] == "Paid":
+                    print("Error! Book not purchased!")
+                elif data["messages"][0] == "Unauthorized":
+                    print("Error! Unauthorized!")
+                else:
+                    print(f"Error messages: ", end="")
+                    print(*data['messages'],
+                          sep=", ",
+                          end="\n" if data['messages'][-1].endswith('.')
+                          else ".\n")
+    return chapter
