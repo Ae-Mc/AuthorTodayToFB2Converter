@@ -8,11 +8,12 @@ USERNAME = "<username>"
 @dataclass
 class Pages:
     main = "https://author.today"
-    login = f"{main}/account/login"
-    personalAccount = f"{main}/account/my-page"
-    profile = f"{main}/u/{USERNAME}"
-    purchased = f"{main}/u/{USERNAME}/library/purchased"
-    baseReaderUrl = f"{main}/reader"
+    login = "/account/login"
+    logoff = "/account/logoff"
+    personalAccount = "/account/my-page"
+    profile = "/u/{USERNAME}"
+    purchased = "/u/{USERNAME}/library/purchased"
+    baseReaderUrl = "/reader"
 
 
 @dataclass
@@ -28,11 +29,18 @@ class ChapterHeader:
     chapterId: int
     length: int
 
+    def __str__(self):
+        return "{:35} (id: {})".format(self.title, self.chapterId)
+
+    def __repr__(self):
+        return "{:35} (id: {})".format(self.title, self.chapterId)
+
 
 @dataclass
 class BookHeader:
     title: str
     author: str
+    annotation: str
     tableOfContents: List[ChapterHeader]
     bookId: int
 

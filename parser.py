@@ -1,9 +1,13 @@
 from os import mkdir
+from time import time
 
-from requests import Session
+from httpx import Timeout
+from Classes.DDOSClient import Client
 
 from Classes.Dataclasses import Pages
 from Classes.Functions import Authorize, GetChapter, GetUser, GetUsersBooks
+from Classes.Functions import Logoff, SetSessionHeaders
+from Classes.Book import Book
 
 OutputFolder = "Output"
 try:
@@ -12,14 +16,18 @@ except FileExistsError:
     pass
 
 
-with Session() as session:
-    if Authorize(session):
-        user = GetUser(session)
-        print(f"\n[LOG] Successful log in as {user.username} aka {user.email} "
-              f"(id: {user.userId})!")
-        chapter = GetChapter(session,
-                             user,
-                             GetUsersBooks(session, Pages.purchased)[0],
-                             0)
-        print(chapter.header.title)
-        print(*chapter.paragraphs, sep="\n")
+with Client(base_url=Pages.main) as client:
+    client._timeout = Timeout(3)
+    SetSessionHeaders(client)
+    t = time()
+    if Authorize(client):
+        book = Book(client, "/work/40323")
+        print(book.header)
+        print("-----------------\nTable of Contents\n-----------------",
+              end="\n    ")
+        print(*book.header.tableOfContents, sep="\n    ", end="\n\n")
+        with open("Output/bookCover.jpg", "wb") as f:
+            f.write(book.header.coverImageData)
+        Logoff(client)
+    print(f"All requests took {time() - t} seconds.")
+    client.close()
