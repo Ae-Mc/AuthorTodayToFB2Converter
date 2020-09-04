@@ -1,7 +1,13 @@
-from requests import Session
-from bs4 import BeautifulSoup
-from os import path, mkdir
+from os import mkdir
+from time import time
 
+from httpx import Timeout
+from Classes.DDOSClient import Client
+
+from Classes.Dataclasses import Pages
+from Classes.Functions import Authorize, GetChapter, GetUser, GetUsersBooks
+from Classes.Functions import Logoff, SetSessionHeaders
+from Classes.Book import Book
 
 OutputFolder = "Output"
 try:
@@ -10,52 +16,18 @@ except FileExistsError:
     pass
 
 
-class Pages:
-    main = "https://author.today"
-    login = main + "/account/login"
-    personalAccount = main + "/account/my-page"
-    purchased = main + "/u/ae_mc/library/purchased"
-
-
-def GetBookFirstChapter(url: str, session: Session):
-    with session.get(url) as reader:
-        print(reader.url)
-        with open(path.join(OutputFolder,
-                            url[url.find("reader") + 7:] + ".php"),
-                  "w") as bookFile:
-            bookFile.write(reader.text)
-
-
-with Session() as session:
-    with open("./PrivateConfig/mainPassword.txt") as f:
-        password = f.readlines()[0]
-    data = {
-        "Login": "ae_mc@mail.ru",
-        "Password": password
-    }
-
-    with session.post(Pages.login, data) as loginResponse:
-        # print(loginResponse.text)
-        pass
-    with session.get(Pages.personalAccount) as personalAccountResponse:
-        with open(path.join(OutputFolder, "personalAccount.php"),
-                  "w") as personalAccountFile:
-            personalAccountFile.write(personalAccountResponse.text)
-
-    with session.get(Pages.purchased) as purchasedResponse:
-        DOM: BeautifulSoup = BeautifulSoup(purchasedResponse.text,
-                                           "html.parser")
-        for book in DOM.find_all("div", attrs={"class": "bookcard"}):
-            author = book.find(
-                "h5", attrs={"class": "bookcard-authors"}).a.text
-            title = book.find(
-                "h4", attrs={"class": "bookcard-title"}).a.text
-            url = Pages.main + book.find("div", attrs={
-                "class": "thumb-buttons"}).find_all("a")[1]["href"]
-            print(f"{author}. «{title}» ({url})")
-            GetBookFirstChapter(url, session)
-
-        with open(path.join(OutputFolder,
-                            "purchased.php"),
-                  "w") as purchasedFile:
-            purchasedFile.write(purchasedResponse.text)
+with Client(base_url=Pages.main) as client:
+    client._timeout = Timeout(3)
+    SetSessionHeaders(client)
+    t = time()
+    if Authorize(client):
+        book = Book(client, "/work/40323")
+        print(book.header)
+        print("-----------------\nTable of Contents\n-----------------",
+              end="\n    ")
+        print(*book.header.tableOfContents, sep="\n    ", end="\n\n")
+        with open("Output/bookCover.jpg", "wb") as f:
+            f.write(book.header.coverImageData)
+        Logoff(client)
+    print(f"All requests took {time() - t} seconds.")
+    client.close()
