@@ -1,13 +1,12 @@
 from os import mkdir
 from time import time
 
-from httpx import Timeout
-from Classes.DDOSClient import Client
+from httpx import Timeout, Client
 
 from Classes.Dataclasses import Pages
-from Classes.Functions import Authorize, GetChapter, GetUser, GetUsersBooks
-from Classes.Functions import Logoff, SetSessionHeaders
+from Classes.Functions import Authorize, Logoff, SetSessionHeaders
 from Classes.Book import Book
+
 
 OutputFolder = "Output"
 try:

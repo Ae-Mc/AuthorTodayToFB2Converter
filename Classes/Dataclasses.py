@@ -37,18 +37,6 @@ class ChapterHeader:
 
 
 @dataclass
-class BookHeader:
-    title: str
-    author: str
-    annotation: str
-    tableOfContents: List[ChapterHeader]
-    bookId: int
-
-    def GetReaderUrl(self) -> str:
-        return Pages.baseReaderUrl + '/' + str(self.bookId)
-
-
-@dataclass
 class Chapter:
     header: ChapterHeader
     paragraphs: List[str]

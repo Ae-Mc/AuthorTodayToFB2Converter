@@ -1,6 +1,6 @@
 from typing import List
 from bs4 import BeautifulSoup, Tag
-from .DDOSClient import Client
+from httpx import Client
 from sys import stderr
 from .Dataclasses import ChapterHeader, Pages
 

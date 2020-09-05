@@ -1,6 +1,5 @@
 from .BookHeader import BookHeader
 from requests import Session
-from bs4 import BeautifulSoup
 
 
 class Book():

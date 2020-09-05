@@ -3,10 +3,10 @@ from json import loads
 from typing import List
 
 from bs4 import BeautifulSoup
-from httpx import Response
-from .DDOSClient import Client
+from httpx import Client, Response
 
-from .Dataclasses import BookHeader, Chapter, ChapterHeader, Pages, User
+from .Dataclasses import Chapter, ChapterHeader, Pages, User
+from .BookHeader import BookHeader
 
 
 def SetSessionHeaders(client: Client):
