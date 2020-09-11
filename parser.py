@@ -1,12 +1,11 @@
 from os import mkdir
 from time import time
 
-from httpx import Timeout, Client
+from httpx import Client, Timeout
 
+from Classes.Book import Book
 from Classes.Dataclasses import Pages
 from Classes.Functions import Authorize, Logoff, SetSessionHeaders
-from Classes.Book import Book
-
 
 OutputFolder = "Output"
 try:
@@ -20,7 +19,7 @@ with Client(base_url=Pages.main) as client:
     SetSessionHeaders(client)
     t = time()
     if Authorize(client):
-        book = Book(client, "/work/40323")
+        book: Book = Book(client, "work/40323")
         print(book.header)
         print("-----------------\nTable of Contents\n-----------------",
               end="\n    ")

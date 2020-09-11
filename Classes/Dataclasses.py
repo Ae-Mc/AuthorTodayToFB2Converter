@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 
 USERNAME = "<username>"
@@ -26,20 +25,13 @@ class User:
 @dataclass
 class ChapterHeader:
     title: str
-    chapterId: int
-    length: int
+    id: int
 
     def __str__(self):
-        return "{:35} (id: {})".format(self.title, self.chapterId)
+        return "{:35} (id: {})".format(self.title, self.id)
 
     def __repr__(self):
-        return "{:35} (id: {})".format(self.title, self.chapterId)
-
-
-@dataclass
-class Chapter:
-    header: ChapterHeader
-    paragraphs: List[str]
+        return "{:35} (id: {})".format(self.title, self.id)
 
 
 @dataclass

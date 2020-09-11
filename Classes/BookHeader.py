@@ -1,15 +1,16 @@
 from typing import List
+
 from bs4 import BeautifulSoup, Tag
 from httpx import Client
-from sys import stderr
+
 from .Dataclasses import ChapterHeader, Pages
 
 
 class BookHeader:
     title: str
+    bookId: int
     authors: List[str]
     tableOfContents: List[ChapterHeader]
-    bookId: int
     coverImageData: bytes
 
     def __init__(self):
@@ -26,6 +27,12 @@ class BookHeader:
 
     def GetReaderUrl(self) -> str:
         return Pages.baseReaderUrl + '/' + str(self.bookId)
+
+    def GetChapterReaderUrl(self, chapter: ChapterHeader) -> str:
+        return Pages.baseReaderUrl + f"/{self.bookId}?chapterId={chapter.id}"
+
+    def GetChapterDataUrl(self, chapter: ChapterHeader) -> str:
+        return Pages.baseReaderUrl + f"/{self.bookId}/chapter?id={chapter.id}"
 
     def _GetBookHeaderFromBookPanel(self,
                                     bookPanel: Tag,
