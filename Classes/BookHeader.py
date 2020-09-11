@@ -18,11 +18,7 @@ class BookHeader:
 
     def GetBookHeaderFromUrl(self, url: str, client: Client) -> None:
         bookPageResponse = client.get(url)
-        if bookPageResponse.status_code != 200:
-            print("Error! Can't get book page! Check url "
-                  f"(current url: {url}).\n"
-                  f"Error code: {bookPageResponse.status_code}")
-            return
+        bookPageResponse.raise_for_status()
         DOM: BeautifulSoup = BeautifulSoup(
             bookPageResponse.text, "html.parser")
         bookPanel = DOM.select_one(".book-panel > .panel-body")
@@ -61,13 +57,8 @@ class BookHeader:
         imageUrl = (Pages.main
                     + coverImageTag.attrs["src"].split("?")[0])
         coverImageResponse = client.get(imageUrl)
-        if coverImageResponse.status_code == 200:
-            coverImageData = bytes(coverImageResponse.content)
-        else:
-            print("Error! Can't get book cover image!"
-                  f" Error code: {coverImageResponse}",
-                  file=stderr)
-            coverImageData = bytes([])
+        coverImageResponse.raise_for_status()
+        coverImageData = bytes(coverImageResponse.content)
         return coverImageData
 
     def __str__(self):

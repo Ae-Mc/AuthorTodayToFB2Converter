@@ -27,6 +27,7 @@ def SetSessionHeaders(client: Client):
 
 def GetBookTableOfContents(client: Client, url: str) -> List[ChapterHeader]:
     readerResponse = client.get(url)
+    readerResponse.raise_for_status()
     responseText = readerResponse.text
     searchResult = re.search(
         r"app.init\(\"readerIndex\", \{.*chapters: "
@@ -35,14 +36,12 @@ def GetBookTableOfContents(client: Client, url: str) -> List[ChapterHeader]:
         responseText,
         re.DOTALL)
     chapters: List[ChapterHeader] = []
-    if searchResult is not None and readerResponse.status_code == 200:
+    if searchResult is not None:
         rawChapters = loads(searchResult.group(1))
         for rawChapter in rawChapters:
             chapters.append(ChapterHeader(rawChapter["title"],
                                           rawChapter["id"],
                                           rawChapter["textLength"]))
-    else:
-        print("Error! Can't get chapters from url {url}!")
     return chapters
 
 
@@ -62,6 +61,7 @@ def SearchGroupOne(pattern: str, text: str) -> str:
 
 def GetUser(client: Client) -> User:
     personalAccountResponse = client.get(Pages.personalAccount)
+    personalAccountResponse.raise_for_status()
     responseText = personalAccountResponse.text
     user = User()
     user.username = SearchGroupOne(
@@ -83,24 +83,23 @@ def Authorize(client: Client) -> bool:
         "Login": email,
         "Password": password
     }
-    requestVerificationToken = GetRequestVerificationToken(
-        client.get(Pages.login))
+    loginPage = client.get(Pages.login)
+    loginPage.raise_for_status()
+    requestVerificationToken = GetRequestVerificationToken(loginPage)
     client.headers["__RequestVerificationToken"] = requestVerificationToken
     loginResponse = client.post(Pages.login, data=data)
+    loginResponse.raise_for_status()
     del client.headers["__RequestVerificationToken"]
-    if loginResponse.status_code != 200:
-        print("Error! Can't log in!"
-              f" Error code: {loginResponse.status_code}")
-        return False
     return True
 
 
 def GetUsersBooks(client: Client, url: str) -> List[BookHeader]:
     books: List[BookHeader] = []
     purchasedResponse = client.get(url)
+    purchasedResponse.raise_for_status()
     DOM: BeautifulSoup = BeautifulSoup(purchasedResponse.text,
                                        "html.parser")
-    if purchasedResponse.status_code == 200 and DOM is not None:
+    if DOM is not None:
         bookShelf = DOM.select_one("div.book-shelf")
         for book in bookShelf.find_all("div", attrs={"class": "bookcard"}):
             title = book.select_one(".bookcard-title > a").text
@@ -136,6 +135,7 @@ def GetChapter(client: Client,
         book.GetReaderUrl()
         + "/chapter?id="
         + str(book.tableOfContents[chapterNumber].chapterId))
+    chapterResponse.raise_for_status()
     data = loads(chapterResponse.text)
     if chapterResponse.status_code == 200 and data["isSuccessful"] is True:
         text = data["data"]["text"]
@@ -163,8 +163,9 @@ def GetChapter(client: Client,
 
 
 def Logoff(client: Client) -> bool:
-    requestVerificationToken = GetRequestVerificationToken(
-        client.get(Pages.main))
+    mainPage = client.get(Pages.main)
+    mainPage.raise_for_status()
+    requestVerificationToken = GetRequestVerificationToken(mainPage)
     client.headers["__RequestVerificationToken"] = requestVerificationToken
     logoffResponse = client.post(Pages.logoff, allow_redirects=False)
     if logoffResponse.status_code != 302:
