@@ -24,8 +24,9 @@ with Client(base_url=Pages.main) as client:
         print("-----------------\nTable of Contents\n-----------------",
               end="\n    ")
         print(*book.header.tableOfContents, sep="\n    ", end="\n\n")
-        with open("Output/bookCover.jpg", "wb") as f:
-            f.write(book.header.coverImageData)
+        if book.header.coverImageData is not None:
+            with open("Output/bookCover.jpg", "wb") as f:
+                f.write(book.header.coverImageData)
         Logoff(client)
     print(f"All requests took {time() - t} seconds.")
     client.close()
