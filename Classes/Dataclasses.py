@@ -40,3 +40,9 @@ class ChapterHeader:
 class Chapter:
     header: ChapterHeader
     paragraphs: List[str]
+
+
+@dataclass
+class Sequence:
+    name: str
+    number: int
