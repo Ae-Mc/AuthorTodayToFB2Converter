@@ -1,33 +1,49 @@
-from httpx import Client
-from typing import List
+import asyncio
+from httpx import AsyncClient
+from typing import List, Tuple
 
 from .BookHeader import BookHeader
 from .Chapter import Chapter
+from .Dataclasses import ChapterHeader, User
 
 
 class Book:
     header: BookHeader
-    client: Client
+    client: AsyncClient
     chapters: List[Chapter]
 
-    def __init__(self, client: Client = None, url: str = None):
+    def __init__(self, client: AsyncClient):
         if client is None:
-            self.client = Client()
+            self.client = AsyncClient()
         else:
             self.client = client
         self.header = BookHeader()
-        if url is not None:
-            self.GetBookFromUrl(url)
 
-    def GetBookFromUrl(self, url: str):
-        self.header.GetBookHeaderFromUrl(url, self.client)
-        self.GetBookChapters()
+    async def GetBookFromUrl(self, url: str):
+        await self.header.GetBookHeaderFromUrl(url, self.client)
+        await self.GetBookChapters()
 
-    def GetBookChapters(self) -> List[Chapter]:
+    async def GetBookChapters(self) -> List[Chapter]:
         self.chapters = []
-        for chapterHeader in self.header.tableOfContents:
-            self.chapters.append(
-                Chapter(self.header.GetChapterDataUrl(chapterHeader),
-                        chapterHeader,
-                        self.client))
+        tasks: List[asyncio.Task] = []
+        user = User("", "", await Chapter.GetUserId(self.client))
+        for i, chapterHeader in enumerate(self.header.tableOfContents):
+            tasks.append(asyncio.create_task(self.GetBookChapter(
+                self.header.GetChapterDataUrl(chapterHeader),
+                chapterHeader,
+                user,
+                i)))
+        for task in tasks:
+            await task
+            self.chapters.append(task.result())
         return self.chapters
+
+    async def GetBookChapter(self,
+                             url: str,
+                             chapterHeader: ChapterHeader,
+                             user: User,
+                             requestId: int
+                             ) -> Tuple[Chapter, int]:
+        chapter = Chapter(chapterHeader, self.client, user)
+        await chapter.GetChapterFromUrl(url)
+        return (chapter, requestId)

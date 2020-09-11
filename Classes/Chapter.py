@@ -2,7 +2,7 @@ import re
 from typing import List, Optional
 
 from bs4 import BeautifulSoup
-from httpx import Client
+from httpx import AsyncClient
 
 from .Dataclasses import ChapterHeader, Pages, User
 
@@ -11,27 +11,25 @@ class Chapter:
     header: Optional[ChapterHeader]
     paragraphs: List[str]
     userId: int
-    client: Client
+    client: AsyncClient
 
     def __init__(self,
-                 url: str,
                  header: ChapterHeader = None,
-                 client: Client = None,
+                 client: AsyncClient = None,
                  user: User = None):
         if client is None:
-            self.client = Client()
+            self.client = AsyncClient()
         else:
             self.client = client
         if user is None:
-            self.userId = self._GetUserId(self.client)
+            self.userId = -1
         else:
             self.userId = user.userId
         self.header = header
-        self.GetChapterFromUrl(url)
 
-    def GetChapterFromUrl(self,
-                          url: str):
-        chapterResponse = self.client.get(url)
+    async def GetChapterFromUrl(self,
+                                url: str):
+        chapterResponse = await self.client.get(url)
         chapterResponse.raise_for_status()
         data = chapterResponse.json()
         if data["isSuccessful"] is True:
@@ -57,16 +55,17 @@ class Chapter:
                           else ".\n")
 
     @staticmethod
-    def _GetUserId(client: Client) -> int:
-        personalAccountResponse = client.get(Pages.personalAccount)
+    async def GetUserId(client: AsyncClient) -> int:
+        personalAccountResponse = await client.get(Pages.personalAccount)
         personalAccountResponse.raise_for_status()
         responseText = personalAccountResponse.text
         searchResult = re.search(r"ga\('set', 'userId', '(\d*)'\)",
                                  responseText)
         if searchResult is not None:
-            return int(searchResult.group(1))
+            userId = int(searchResult.group(1))
         else:
-            return -1
+            userId = -1
+        return userId
 
     def _DecodeChapter(self,
                        chapterRawTextData: str,

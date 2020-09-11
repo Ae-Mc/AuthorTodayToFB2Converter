@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from bs4 import BeautifulSoup, Tag
-from httpx import Client
+from httpx import AsyncClient
 
 from .Dataclasses import ChapterHeader, Pages, Sequence
 from .Functions import SearchGroupOne
@@ -20,20 +20,17 @@ class BookHeader:
     coverImageData: Optional[bytes]
     publicationDate: datetime
 
-    def __init__(self, url: str = None, client: Client = None):
+    def __init__(self):
         self.authors = []
-        if url is not None:
-            if client is None:
-                client = Client()
-            self.GetBookHeaderFromUrl(url, client)
 
-    def GetBookHeaderFromUrl(self, url: str, client: Client) -> None:
-        bookPageResponse = client.get(url)
+    async def GetBookHeaderFromUrl(
+            self, url: str, client: AsyncClient) -> None:
+        bookPageResponse = await client.get(url)
         bookPageResponse.raise_for_status()
         DOM: BeautifulSoup = BeautifulSoup(
             bookPageResponse.text, "html.parser")
         bookPanel = DOM.select_one(".book-panel > .panel-body")
-        self._GetBookHeaderFromBookPanel(bookPanel, client)
+        await self._GetBookHeaderFromBookPanel(bookPanel, client)
 
     def GetReaderUrl(self) -> str:
         return Pages.baseReaderUrl + '/' + str(self.bookId)
@@ -44,9 +41,9 @@ class BookHeader:
     def GetChapterDataUrl(self, chapter: ChapterHeader) -> str:
         return Pages.baseReaderUrl + f"/{self.bookId}/chapter?id={chapter.id}"
 
-    def _GetBookHeaderFromBookPanel(self,
-                                    bookPanel: Tag,
-                                    client: Client) -> None:
+    async def _GetBookHeaderFromBookPanel(self,
+                                          bookPanel: Tag,
+                                          client: AsyncClient) -> None:
         self.title = bookPanel.select_one(".book-title").text.strip()
         for author in bookPanel.select(".book-authors > span > meta"):
             self.authors.append(author.attrs["content"])
@@ -56,8 +53,8 @@ class BookHeader:
             ".book-cover > a.book-cover-content").attrs["href"].split('/')[-1])
         self.tableOfContents = self._GetBookTableOfContentsFromBookPanel(
             bookPanel)
-        self.coverImageData = self._GetBookCoverFromBookPanel(bookPanel,
-                                                              client)
+        self.coverImageData = await self._GetBookCoverFromBookPanel(bookPanel,
+                                                                    client)
         self.sequence = self._GetBookSequenceFromBookPanel(bookPanel)
         self.genres = [a.text for a in bookPanel.select(".book-genres > a")]
         self.tags = [a.text for a in bookPanel.select(".tags > a")]
@@ -79,9 +76,8 @@ class BookHeader:
                 ChapterHeader(row.text, row.attrs["href"].split('/')[-1]))
         return tableOfContents
 
-    def _GetBookCoverFromBookPanel(self,
-                                   bookPanel: Tag,
-                                   client: Client) -> Optional[bytes]:
+    async def _GetBookCoverFromBookPanel(
+            self, bookPanel: Tag, client: AsyncClient) -> Optional[bytes]:
         coverImageTag = bookPanel.select_one(
             ".book-action-panel .book-cover .cover-image")
         if coverImageTag is None:
@@ -89,7 +85,7 @@ class BookHeader:
         else:
             imageUrl = (Pages.main
                         + coverImageTag.attrs["src"].split("?")[0])
-            coverImageResponse = client.get(imageUrl)
+            coverImageResponse = await client.get(imageUrl)
             coverImageResponse.raise_for_status()
             coverImageData = bytes(coverImageResponse.content)
             return coverImageData
