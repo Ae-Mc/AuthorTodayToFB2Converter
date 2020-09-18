@@ -5,7 +5,8 @@ from httpx import AsyncClient, Timeout
 
 from Classes.Book import Book
 from Classes.Dataclasses import Pages
-from Classes.Functions import Authorize, Logoff, SetSessionHeaders
+from Classes.FB2Builder import FB2Book
+from Classes.Functions import Authorize, Logoff, SetSessionHeaders, GetUser
 
 
 async def main():
@@ -24,6 +25,26 @@ async def main():
             if book.header.coverImageData is not None:
                 with open("Output/bookCover.jpg", "wb") as f:
                     f.write(book.header.coverImageData)
+            with open("Output/test.fb2", 'wb') as f:
+                if book.header.coverImageData is None:
+                    coverImages = None
+                else:
+                    coverImages = [book.header.coverImageData]
+                if book.header.sequence is None:
+                    sequences = None
+                else:
+                    sequences = [book.header.sequence]
+                fb2 = FB2Book(genres=book.header.genres,
+                              authors=book.header.authors,
+                              title=book.header.title,
+                              annotation=book.header.annotation,
+                              keywords=book.header.tags,
+                              date=book.header.publicationDate,
+                              coverPageImages=coverImages,
+                              lang="ru",
+                              sequences=sequences,
+                              chapters=await book.GetBookChapters())
+                f.write(FB2Book._PrettifyXml(fb2.GetFB2()))
             await Logoff(client)
         print(f"All requests took {time() - t} seconds.")
 

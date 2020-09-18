@@ -3,8 +3,10 @@ from base64 import b64encode
 from datetime import datetime
 from typing import List, Optional
 from xml.dom import minidom
+from uuid import uuid4
 
 from .Dataclasses import Sequence
+from .Chapter import Chapter
 
 
 class FB2Book():
@@ -19,6 +21,10 @@ class FB2Book():
     srcLang: Optional[str]
     translators: Optional[List[str]]
     sequences: Optional[List[Sequence]]
+    docAuthors: List[str]
+    docId: str
+    docVersion: str
+    chapters: List[Chapter]
 
     def __init__(self,
                  genres: List[str] = [],
@@ -31,7 +37,11 @@ class FB2Book():
                  lang: str = "en",
                  srcLang: str = None,
                  translators: List[str] = None,
-                 sequences: List[str] = None):
+                 sequences: List[str] = None,
+                 docId: str = str(uuid4()),
+                 docAuthors: List[str] = ["Ae-Mc"],
+                 docVersion: str = "1.0",
+                 chapters: List[Chapter] = None):
         self.genres = genres
         self.authors = authors
         self.title = title
@@ -43,6 +53,10 @@ class FB2Book():
         self.srcLang = srcLang
         self.translators = translators
         self.sequences = sequences
+        self.docAuthors = docAuthors
+        self.docId = docId
+        self.docVersion = docVersion
+        self.chapters = chapters or []
 
     def GetFB2(self) -> ET.Element:
         fb2Tree = ET.Element("FictionBook", attrib={
@@ -50,12 +64,14 @@ class FB2Book():
             "xmlns:xlink": "http://www.w3.org/1999/xlink"
         })
         self._AddDescription(fb2Tree)
+        self._AddBody(fb2Tree)
         self._AddBinaries(fb2Tree)
         return fb2Tree
 
     def _AddDescription(self, root: ET.Element) -> None:
         description = ET.SubElement(root, "description")
         self._AddTitleInfo(description)
+        self._AddDocumentInfo(description)
 
     def _AddTitleInfo(self, description: ET.Element) -> None:
         titleInfo = ET.SubElement(description, "title-info")
@@ -96,6 +112,36 @@ class FB2Book():
                     "name": sequence.name,
                     "number": str(sequence.number)
                 })
+
+    def _AddDocumentInfo(self, description: ET.Element) -> None:
+        documentInfo = ET.SubElement(description, "document-info")
+        for author in self.docAuthors:
+            documentInfo.append(self.BuildAuthorNameFromStr(author, "author"))
+        ET.SubElement(documentInfo, "program-used").text = (
+            "FB2creator by Ae-Mc")
+        dateElement = ET.SubElement(documentInfo, "date")
+        dateElement.text = datetime.now().strftime("%Y-%m-%d")
+        dateElement.attrib["value"] = datetime.now().strftime("%Y-%m-%d")
+        ET.SubElement(documentInfo, "id").text = self.docId
+        ET.SubElement(documentInfo, "version").text = self.docVersion
+
+    def _AddBody(self, root: ET.Element) -> None:
+        if len(self.chapters):
+            bodyElement = ET.SubElement(root, "body")
+            for chapter in self.chapters:
+                bodyElement.append(
+                    self.BuildSectionFromChapter(chapter, chapter.header.id))
+
+    @staticmethod
+    def BuildSectionFromChapter(chapter: Chapter,
+                                id: str = None) -> ET.Element:
+        sectionElement = ET.Element("section")
+        if id is not None:
+            sectionElement.attrib["id"] = id
+        ET.SubElement(sectionElement, "title").text = chapter.header.title
+        for paragraph in chapter.paragraphs:
+            ET.SubElement(sectionElement, "p").text = paragraph
+        return sectionElement
 
     def _AddBinaries(self, root: ET.Element) -> None:
         if self.coverPageImages is not None:
