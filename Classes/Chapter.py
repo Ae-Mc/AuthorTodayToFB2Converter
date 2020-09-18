@@ -41,7 +41,7 @@ class Chapter:
             for paragraph in DOM.find_all("p"):
                 self.paragraphs.append(paragraph.text)
         else:
-            print("Error! Can't get chapter from url «{url}».")
+            print(f"Error! Can't get chapter from url «{url}».")
             if "messages" in data and len(data["messages"]) > 0:
                 if data["messages"][0] == "Paid":
                     print("Error! Book not purchased!")

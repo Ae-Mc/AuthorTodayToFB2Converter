@@ -27,12 +27,12 @@ class Book:
         self.chapters = []
         tasks: List[asyncio.Task] = []
         user = User("", "", await Chapter.GetUserId(self.client))
-        for i, chapterHeader in enumerate(self.header.tableOfContents):
+        for chapterHeader in self.header.tableOfContents:
             tasks.append(asyncio.create_task(self.GetBookChapter(
                 self.header.GetChapterDataUrl(chapterHeader),
                 chapterHeader,
-                user,
-                i)))
+                user
+            )))
         for task in tasks:
             await task
             self.chapters.append(task.result())
@@ -41,9 +41,7 @@ class Book:
     async def GetBookChapter(self,
                              url: str,
                              chapterHeader: ChapterHeader,
-                             user: User,
-                             requestId: int
-                             ) -> Tuple[Chapter, int]:
+                             user: User) -> Tuple[Chapter, int]:
         chapter = Chapter(chapterHeader, self.client, user)
         await chapter.GetChapterFromUrl(url)
-        return (chapter, requestId)
+        return chapter

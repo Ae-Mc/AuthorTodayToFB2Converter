@@ -62,7 +62,7 @@ class FB2Book():
         for genre in self.genres:
             ET.SubElement(titleInfo, "genre").text = genre
         for author in self.authors:
-            titleInfo.append(self._ParseAuthorName(author, "author"))
+            titleInfo.append(self.BuildAuthorNameFromStr(author, "author"))
         ET.SubElement(titleInfo, "book-title").text = self.title
         if self.annotation is not None:
             annotationElement = ET.SubElement(titleInfo, "annotation")
@@ -73,8 +73,9 @@ class FB2Book():
                 "\n".join(self.keywords))
         if self.date is not None:
             dateElement = ET.SubElement(titleInfo, "date")
-            dateElement.attrib["value"] = str(self.date)
-            dateElement.text = datetime.strftime(self.date, "%Y-%m-%d")
+            dateElement.attrib["value"] = datetime.strftime(
+                self.date, "%Y-%m-%d")
+            dateElement.text = self.date.strftime("%Y-%m-%d")
         if self.coverPageImages is not None:
             coverPageElement = ET.SubElement(titleInfo, "coverpage")
             for i in range(len(self.coverPageImages)):
@@ -87,7 +88,7 @@ class FB2Book():
         if self.translators is not None:
             for translator in self.translators:
                 titleInfo.append(
-                    self._ParseAuthorName(translator, "translator"))
+                    self.BuildAuthorNameFromStr(translator, "translator"))
         if self.sequences is not None:
             sequence: Sequence
             for sequence in self.sequences:
@@ -96,7 +97,7 @@ class FB2Book():
                     "number": str(sequence.number)
                 })
 
-    def _AddBinaries(self, root: ET.Element):
+    def _AddBinaries(self, root: ET.Element) -> None:
         if self.coverPageImages is not None:
             for i, coverImage in enumerate(self.coverPageImages):
                 self._AddBinary(root, f"cover#{i}", "image/jpeg", coverImage)
@@ -111,7 +112,7 @@ class FB2Book():
         binaryElement.text = b64encode(data).decode("utf-8")
 
     @staticmethod
-    def _ParseAuthorName(name: str, rootTag: str) -> ET.Element:
+    def BuildAuthorNameFromStr(name: str, rootTag: str) -> ET.Element:
         rootElement = ET.Element(rootTag)
         authorNameParts = name.split(' ')
         if len(authorNameParts) == 1:
