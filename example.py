@@ -6,7 +6,7 @@ from httpx import AsyncClient, Timeout
 from Classes.Book import Book
 from Classes.Dataclasses import Pages
 from Classes.FB2Builder import FB2Book
-from Classes.Functions import Authorize, Logoff, SetSessionHeaders, GetUser
+from Classes.Functions import Authorize, Logoff, SetSessionHeaders
 
 
 async def main():
@@ -14,7 +14,11 @@ async def main():
         client._timeout = Timeout(3)
         SetSessionHeaders(client)
         t = time()
-        if await Authorize(client):
+        with open("./PrivateConfig/mainPassword.txt") as f:
+            password = f.readlines()[0]
+        with open("./PrivateConfig/mail.ru-email.txt") as f:
+            email = f.readlines()[0]
+        if await Authorize(client, email, password):
             book: Book = Book(client)
             await book.GetBookFromUrl("work/40323")
             print(book.header)

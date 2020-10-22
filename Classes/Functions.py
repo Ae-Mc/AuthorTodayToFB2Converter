@@ -51,11 +51,9 @@ async def GetUser(client: AsyncClient) -> User:
     return user
 
 
-async def Authorize(client: AsyncClient) -> bool:
-    with open("./PrivateConfig/mainPassword.txt") as f:
-        password = f.readlines()[0]
-    with open("./PrivateConfig/mail.ru-email.txt") as f:
-        email = f.readlines()[0]
+async def Authorize(client: AsyncClient,
+                    email: str,
+                    password: str) -> bool:
     data = {
         "Login": email,
         "Password": password
