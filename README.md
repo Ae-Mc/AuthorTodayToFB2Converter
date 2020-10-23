@@ -1,7 +1,5 @@
 # AuthorTodayToFB2Converter
 
-## Description
-
 Program to download and convert books from site [author.today](author.today) to
 fb2 format.
 
