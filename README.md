@@ -9,6 +9,6 @@ fb2 format.
 
 Example of usage you can find in file example.py
 
-# Installation
+## Installation
 
-Just clone this repo
+Clone this repo and run `pip install -r requirements.txt`

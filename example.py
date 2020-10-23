@@ -2,10 +2,10 @@ import asyncio
 from time import time
 
 from httpx import AsyncClient, Timeout
+from FB2 import FictionBook2
 
 from Classes.Book import Book
 from Classes.Dataclasses import Pages
-from Classes.FB2Builder import FB2Book
 from Classes.Functions import Authorize, Logoff, SetSessionHeaders
 
 
@@ -26,29 +26,22 @@ async def main():
                   end="\n")
             for chapterHeader in book.header.tableOfContents:
                 print(chapterHeader)
-            if book.header.coverImageData is not None:
-                with open("Output/bookCover.jpg", "wb") as f:
-                    f.write(book.header.coverImageData)
-            with open("Output/test.fb2", 'wb') as f:
-                if book.header.coverImageData is None:
-                    coverImages = None
-                else:
-                    coverImages = [book.header.coverImageData]
-                if book.header.sequence is None:
-                    sequences = None
-                else:
-                    sequences = [book.header.sequence]
-                fb2 = FB2Book(genres=book.header.genres,
-                              authors=book.header.authors,
-                              title=book.header.title,
-                              annotation=book.header.annotation,
-                              keywords=book.header.tags,
-                              date=book.header.publicationDate,
-                              coverPageImages=coverImages,
-                              lang="ru",
-                              sequences=sequences,
-                              chapters=await book.GetBookChapters())
-                f.write(FB2Book._PrettifyXml(fb2.GetFB2()))
+            fb2 = FictionBook2()
+            fb2.titleInfo.title = book.header.title
+            fb2.titleInfo.authors = book.header.authors
+            fb2.titleInfo.annotation = book.header.annotation
+            fb2.titleInfo.genres = book.header.genres
+            fb2.titleInfo.lang = "ru"
+            fb2.titleInfo.sequences = [(book.header.sequence.name,
+                                        book.header.sequence.number)]
+            fb2.titleInfo.keywords = book.header.tags
+            fb2.titleInfo.coverPageImages = [book.header.coverImageData]
+            fb2.titleInfo.date = (book.header.publicationDate, None)
+
+            fb2.chapters = list(map(lambda chapter: (chapter.header.title,
+                                                     chapter.paragraphs),
+                                    await book.GetBookChapters()))
+            fb2.write(f"./Output/{fb2.titleInfo.title}.fb2")
             await Logoff(client)
         print(f"All requests took {time() - t} seconds.")
 
