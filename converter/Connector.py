@@ -1,30 +1,56 @@
-from httpx import AsyncClient
+from typing import Callable
+from httpx import Client, HTTPStatusError
+from bs4 import BeautifulSoup
 from FB2 import FictionBook2
 
 from .User import User
 
 
+def SetRequestVerificationHeader(func) -> Callable:
+    def wrapper(*args, **kwargs):
+        mainPage = args[0].client.get("/")
+        mainPage.raise_for_status()
+        DOM = BeautifulSoup(mainPage, "html.parser")
+        requestVerificationToken = (
+            DOM.select_one("form#logoffForm > input").attrs["value"])
+        args[0].client.headers["__RequestVerificationToken"] = (
+            requestVerificationToken)
+    return wrapper
+
+
 class Connector:
-    client: AsyncClient
+    client: Client
     user: User
 
     def __init__(self):
-        self.client = AsyncClient(base_url="https://author.today", timeout=5)
+        self.client = Client(base_url="https://author.today", timeout=5)
         self.SetClientHeaders()
 
-    async def Login(self, email: str, password: str) -> None:
+    @SetRequestVerificationHeader
+    def Login(self, email: str, password: str) -> None:
+        data = {"Login": email, "Password": password}
+        loginResponse = self.client.post("/account/login", data=data)
+        loginResponse.raise_for_status()
+        self.LoadUser()
+
+    @SetRequestVerificationHeader
+    def Logout(self) -> None:
+        logoffResponse = self.client.post(
+            "https://author.today/account/logoff", allow_redirects=False)
+        if logoffResponse.status_code != 302:
+            raise HTTPStatusError(
+                message=("Can't logoff!"
+                         f" Error code: {logoffResponse.status_code}"),
+                request=logoffResponse.request,
+                response=logoffResponse)
+
+    def Authorized(self) -> bool:
         pass
 
-    async def Logout(self) -> None:
+    def GetBookById(self, id: int) -> FictionBook2:
         pass
 
-    async def Authorized(self) -> bool:
-        pass
-
-    async def GetBookById(self, id: int) -> FictionBook2:
-        pass
-
-    async def GetBookByUrl(self, url: str) -> FictionBook2:
+    def GetBookByUrl(self, url: str) -> FictionBook2:
         pass
 
     def SetClientHeaders(self):
@@ -40,3 +66,6 @@ class Connector:
         self.client.headers["Sec-Fetch-Mode"] = "navigate"
         self.client.headers["Sec-Fetch-Site"] = "same-origin"
         self.client.headers["Sec-Fetch-User"] = "?0"
+
+    def LoadUser(self) -> User:
+        pass
