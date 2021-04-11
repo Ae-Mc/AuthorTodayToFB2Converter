@@ -54,14 +54,15 @@ async def GetUser(client: AsyncClient) -> User:
 async def Authorize(client: AsyncClient,
                     email: str,
                     password: str) -> bool:
-    data = {
-        "Login": email,
-        "Password": password
-    }
     loginPage = await client.get(Pages.login)
     loginPage.raise_for_status()
     requestVerificationToken = GetRequestVerificationToken(loginPage)
     client.headers["__RequestVerificationToken"] = requestVerificationToken
+    data = {
+        "__RequestVerificationToken": requestVerificationToken,
+        "Login": email,
+        "Password": password
+    }
     loginResponse = await client.post(Pages.login, data=data)
     loginResponse.raise_for_status()
     del client.headers["__RequestVerificationToken"]
@@ -73,7 +74,10 @@ async def Logoff(client: AsyncClient) -> bool:
     mainPage.raise_for_status()
     requestVerificationToken = GetRequestVerificationToken(mainPage)
     client.headers["__RequestVerificationToken"] = requestVerificationToken
-    logoffResponse = await client.post(Pages.logoff, allow_redirects=False)
+    data = {
+        "__RequestVerificationToken": requestVerificationToken
+    }
+    logoffResponse = await client.post(Pages.logoff, data=data, allow_redirects=False)
     if logoffResponse.status_code != 302:
         print("Error! Can't log off!"
               f" Error code: {logoffResponse.status_code}")
