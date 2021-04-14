@@ -10,5 +10,3 @@ Example of usage you can find in file example.py
 ## Installation
 
 Clone this repo and run `pip install -r requirements.txt`
-
-If you want to use `example.py` you also need `httpx` and `bs4` packages.
