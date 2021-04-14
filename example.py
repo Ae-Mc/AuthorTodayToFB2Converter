@@ -39,9 +39,9 @@ async def main():
             fb2.titleInfo.coverPageImages = [book.header.coverImageData]
             fb2.titleInfo.date = (book.header.publicationDate, None)
 
-            fb2.chapters = list(map(lambda chapter: (chapter.header.title,
-                                                     chapter.paragraphs),
-                                    await book.GetBookChapters()))
+            fb2.chapters = list(map(
+                lambda chapter: (chapter.header.title, chapter.paragraphs),
+                book.chapters))
             fb2.write(f"./Output/{fb2.titleInfo.title}.fb2")
             await Logoff(client)
         print(f"All requests took {time() - t} seconds.")
