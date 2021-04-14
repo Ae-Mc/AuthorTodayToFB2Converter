@@ -19,6 +19,7 @@ async def main():
         with open("./PrivateConfig/mail.ru-email.txt") as f:
             email = f.readlines()[0]
         if await Authorize(client, email, password):
+            print(f'Authorized as {email}')
             book: Book = Book(client)
             await book.GetBookFromUrl("work/40323")
             print(book.header)

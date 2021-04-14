@@ -57,6 +57,7 @@ async def Authorize(client: AsyncClient,
     loginPage = await client.get(Pages.login)
     loginPage.raise_for_status()
     requestVerificationToken = GetRequestVerificationToken(loginPage)
+    data["__RequestVerificationToken"] = requestVerificationToken
     client.headers["__RequestVerificationToken"] = requestVerificationToken
     data = {
         "__RequestVerificationToken": requestVerificationToken,
