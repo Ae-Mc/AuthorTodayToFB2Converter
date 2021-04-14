@@ -73,11 +73,16 @@ class Chapter:
         cipher = "".join(reversed(readerSecret)) + "@_@"
         if self.userId != -1:
             cipher += str(self.userId)
-        chapterText = ""
-        for i in range(0, len(chapterRawTextData)):
-            chapterText += chr(
-                ord(chapterRawTextData[i]) ^ ord(cipher[i % len(cipher)]))
-        return chapterText
+        # encode and remove header
+        l = list(chapterRawTextData.encode('utf-16'))[2:]
+        # concatenate two adjacent bytes
+        chapterEBytes = [(b<<8)|a for a,b in zip(l[0::2],l[1::2])]
+        # utf-16 header
+        chapterDBytes = [65279]
+        for i in range(0, len(chapterEBytes)):
+            chapterDBytes.append(chapterEBytes[i] ^ ord(cipher[i % len(cipher)]))
+        # split by bytes, concatenate sequences and decode
+        return bytes([b for a in chapterDBytes for b in [a>>8, a&0xff]]).decode('utf-16')
 
     def __str__(self):
         return (("" if self.header is None else self.header.title + "\n")
