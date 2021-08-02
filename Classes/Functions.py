@@ -24,7 +24,8 @@ def SetSessionHeaders(client: AsyncClient):
 
 def GetRequestVerificationToken(response: Response) -> str:
     DOM: BeautifulSoup = BeautifulSoup(response.text, "html.parser")
-    return DOM.select_one("form#logoffForm > input").attrs["value"]
+    tokenInput = DOM.select_one("form#logoffForm > input")
+    return tokenInput.attrs["value"] if tokenInput else ''
 
 
 def SearchGroupOne(pattern: str, text: str) -> str:
@@ -57,7 +58,6 @@ async def Authorize(client: AsyncClient,
     loginPage = await client.get(Pages.login)
     loginPage.raise_for_status()
     requestVerificationToken = GetRequestVerificationToken(loginPage)
-    data["__RequestVerificationToken"] = requestVerificationToken
     client.headers["__RequestVerificationToken"] = requestVerificationToken
     data = {
         "__RequestVerificationToken": requestVerificationToken,

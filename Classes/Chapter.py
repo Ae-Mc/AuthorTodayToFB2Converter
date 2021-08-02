@@ -14,17 +14,11 @@ class Chapter:
     client: AsyncClient
 
     def __init__(self,
-                 header: ChapterHeader = None,
+                 header: ChapterHeader,
                  client: AsyncClient = None,
                  user: User = None):
-        if client is None:
-            self.client = AsyncClient()
-        else:
-            self.client = client
-        if user is None:
-            self.userId = -1
-        else:
-            self.userId = user.userId
+        self.client = client if client else AsyncClient()
+        self.userId = user.userId if user else -1
         self.header = header
 
     async def GetChapterFromUrl(self,
