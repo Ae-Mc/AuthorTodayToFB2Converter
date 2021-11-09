@@ -108,7 +108,7 @@ class BookHeader:
         if coverImageTag is None:
             return None
         else:
-            imageUrl = Pages.main + coverImageTag.attrs["src"].split("?")[0]
+            imageUrl = coverImageTag.attrs["src"].split("?")[0]
             coverImageResponse = await client.get(imageUrl)
             coverImageResponse.raise_for_status()
             coverImageData = bytes(coverImageResponse.content)
