@@ -1,11 +1,11 @@
 import asyncio
+from os import getenv
 from time import time
 from typing import List, Union, cast
 
-from FB2.Author import Author
-
-from httpx import AsyncClient, Timeout
 from FB2 import FictionBook2
+from FB2.Author import Author
+from httpx import AsyncClient, Timeout
 
 from Classes.Book import Book
 from Classes.Dataclasses import Pages
@@ -17,10 +17,8 @@ async def main():
         client._timeout = Timeout(3)
         SetSessionHeaders(client)
         t = time()
-        with open("./PrivateConfig/mainPassword.txt") as f:
-            password = f.readlines()[0]
-        with open("./PrivateConfig/mail.ru-email.txt") as f:
-            email = f.readlines()[0]
+        password = getenv('AUTHOR_TODAY_PASSWORD')
+        email = getenv('AUTHOR_TODAY_EMAIL')
         if await Authorize(client, email, password):
             print(f"Authorized as {email}")
             book: Book = Book(client)

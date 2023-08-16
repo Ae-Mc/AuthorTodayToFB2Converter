@@ -27,6 +27,7 @@ class BookHeader:
         self, url: str, client: AsyncClient
     ) -> None:
         bookPageResponse = await client.get(url)
+        print(bookPageResponse.headers)
         bookPageResponse.raise_for_status()
         DOM: BeautifulSoup = BeautifulSoup(
             bookPageResponse.text, "html.parser"
